@@ -1,0 +1,10 @@
+{
+  "status": "success",
+  "city": "Pune",
+  "source": "offline_mock",
+  "is_live": false,
+  "weather": {
+    "temperature_c": 28,
+    "condition": "Sunny"
+  }
+}

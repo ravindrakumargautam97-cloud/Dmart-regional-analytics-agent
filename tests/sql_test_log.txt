@@ -1,0 +1,52 @@
+
+QUERY 1
+('Mumbai', 1064371.6)
+('Bengaluru', 931065.68)
+('Hyderabad', 893233.01)
+('Ahmedabad', 782647.37)
+('Pune', 636358.55)
+
+QUERY 2
+('Mumbai', 101.37)
+('Bengaluru', 98.01)
+('Hyderabad', 94.02)
+('Ahmedabad', 92.08)
+('Pune', 70.71)
+
+QUERY 3
+('Hyderabad', 3.85)
+('Ahmedabad', 3.19)
+('Bengaluru', 2.38)
+('Pune', 2.32)
+('Mumbai', 1.93)
+
+QUERY 4
+('Mumbai', 2391.27)
+('Hyderabad', 2209.51)
+('Bengaluru', 2076.86)
+('Ahmedabad', 1922.59)
+('Pune', 1517.71)
+
+QUERY 5
+('Pune', 90)
+('Ahmedabad', 76)
+('Hyderabad', 66)
+('Bengaluru', 55)
+('Mumbai', 40)
+
+QUERY 6
+('Ahmedabad', '2026-04', 22889946.94)
+('Ahmedabad', '2026-05', 24764328.7)
+('Ahmedabad', '2026-06', 22783987.24)
+('Bengaluru', '2026-04', 28195040.25)
+('Bengaluru', '2026-05', 28419746.76)
+('Bengaluru', '2026-06', 27181123.88)
+('Hyderabad', '2026-04', 26335304.26)
+('Hyderabad', '2026-05', 27909854.71)
+('Hyderabad', '2026-06', 26145811.88)
+('Mumbai', '2026-04', 32065974.83)
+('Mumbai', '2026-05', 33220035.01)
+('Mumbai', '2026-06', 30507434.11)
+('Pune', '2026-04', 18905212.65)
+('Pune', '2026-05', 19940791.64)
+('Pune', '2026-06', 18426265.49)

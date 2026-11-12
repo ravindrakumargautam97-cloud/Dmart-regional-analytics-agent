@@ -1,0 +1,59 @@
+=============================================
+DMART REGIONAL ANALYTICS AGENT
+=============================================
+
+Available Commands:
+1. stores
+2. summary
+3. pune
+4. best
+5. help
+6. exit
+
+Ask: 
+AVAILABLE STORES
+----------------
+- Mumbai
+- Bengaluru
+- Hyderabad
+- Ahmedabad
+- Pune
+
+Ask: 
+DMART STORE PERFORMANCE
+-----------------------
+Store | Revenue | Footfall | Stockout Hours
+Mumbai | 1064371.6 | 2391.27 | 1.93
+Bengaluru | 931065.68 | 2076.86 | 2.38
+Hyderabad | 893233.01 | 2209.51 | 3.85
+Ahmedabad | 782647.37 | 1922.59 | 3.19
+Pune | 636358.55 | 1517.71 | 2.32
+
+Ask: 
+PUNE REVENUE INVESTIGATION
+--------------------------
+Average Revenue: INR 636,358.55
+Average Footfall: 1,517.71
+Average Stockout Hours: 2.32
+Stockout Rank: 4 of 5
+Highest Revenue Store: Mumbai
+
+ANALYSIS
+Pune has the lowest average daily revenue.
+Pune does not have the highest stockout hours.
+Lower footfall may contribute to low revenue.
+
+CONCLUSION
+Stockouts alone do not explain Pune's low revenue.
+Further investigation is required.
+Correlation does not prove causation.
+
+Ask: 
+BEST PERFORMING STORE
+---------------------
+Store: Mumbai
+Average Revenue: INR 1064371.6
+
+Ask: Commands: stores, summary, pune, best, help, exit
+
+Ask: Goodbye!
