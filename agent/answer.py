@@ -20,7 +20,9 @@ def format_inr(value):
 def make_evidence(data, fields):
     """Create structured evidence from fetched data."""
     evidence = {
-        "source": data.get("source", "data/store_daily_clean.csv"),
+        "source": data.get(
+            "source", "data/store_daily_clean.csv"
+        ),
         "fields": fields,
     }
 
@@ -132,30 +134,73 @@ def make_answer(intent, data):
                 "grounded_values": [],
             }
 
-        lines = [
-            f"{i}. {row['store']}: "
-            f"{format_inr(row['avg_revenue'])}"
-            for i, row in enumerate(data, 1)
-        ]
+        metric = data[0].get("metric", "revenue_inr")
+
+        labels = {
+            "revenue_inr": "revenue",
+            "footfall": "footfall",
+            "stockout_hours": "stockout hours",
+            "achievement_pct": "target achievement",
+        }
+
+        if metric not in labels:
+            return {
+                "status": "Safe Failure",
+                "answer": "Unsupported comparison metric.",
+                "evidence": [],
+                "grounded_values": [],
+            }
+
+        lines = []
+        grounded = []
+
+        for i, row in enumerate(data, 1):
+            value = row.get(
+                "avg_value",
+                row.get("avg_revenue")
+            )
+
+            if value is None:
+                return {
+                    "status": "Safe Failure",
+                    "answer": "Comparison data is incomplete.",
+                    "evidence": [],
+                    "grounded_values": [],
+                }
+
+            if metric == "revenue_inr":
+                display_value = format_inr(value)
+            elif metric == "stockout_hours":
+                display_value = (
+                    f"{format_number(value)} hours"
+                )
+            elif metric == "achievement_pct":
+                display_value = (
+                    f"{format_number(value)}%"
+                )
+            else:
+                display_value = format_number(value)
+
+            lines.append(
+                f"{i}. {row['store']}: {display_value}"
+            )
+            grounded.append(display_value)
 
         return {
             "status": "Answered",
             "answer": (
-                "Average daily revenue ranking:\n"
+                f"Average daily {labels[metric]} ranking:\n"
                 + "\n".join(lines)
                 + "\nSource: data/store_daily_clean.csv."
             ),
             "evidence": [
                 {
                     "source": "data/store_daily_clean.csv",
-                    "fields": ["revenue_inr"],
+                    "fields": [metric],
                     "aggregation": "average_by_store",
                 }
             ],
-            "grounded_values": [
-                format_inr(row["avg_revenue"])
-                for row in data
-            ],
+            "grounded_values": grounded,
         }
 
     if intent == "inventory":

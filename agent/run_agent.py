@@ -17,6 +17,7 @@ from agent.fetch import (
     get_store_day,
     get_target_vs_actual,
     compare_store_revenue,
+    compare_store_metric,
     get_inventory,
     get_feedback,
 )
@@ -138,7 +139,7 @@ def handle(question, session_id, user_id="u1"):
         elif intent == "comparison":
             route = "sql"
             executed = True
-            tools_called.append("compare_store_revenue")
+            tools_called.append("compare_store_metric")
 
             ascending = any(
                 word in question.lower()
@@ -151,9 +152,10 @@ def handle(question, session_id, user_id="u1"):
                 first, last = date, date
 
             retry = run_with_retry(
-                lambda: compare_store_revenue(
-                    first,
-                    last,
+                lambda: compare_store_metric(
+                    metric=metric or "revenue_inr",
+                    start_date=first,
+                    end_date=last,
                     ascending=ascending,
                 ),
                 max_attempts=3,
