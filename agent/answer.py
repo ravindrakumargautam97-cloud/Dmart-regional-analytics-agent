@@ -1,18 +1,47 @@
 
+from decimal import Decimal, ROUND_HALF_UP
+
+
+def format_number(value, places=2):
+    """Format numbers using ROUND_HALF_UP."""
+    quantum = Decimal("1").scaleb(-places)
+    number = Decimal(str(value)).quantize(
+        quantum,
+        rounding=ROUND_HALF_UP
+    )
+    return f"{number:.{places}f}"
+
+
 def format_inr(value):
-    return f"INR {float(value):,.2f}"
+    """Format money without commas."""
+    return f"INR {format_number(value)}"
+
+
+def make_evidence(data, fields):
+    """Create structured evidence from fetched data."""
+    evidence = {
+        "source": data.get("source", "data/store_daily_clean.csv"),
+        "fields": fields,
+    }
+
+    if data.get("store"):
+        evidence["store"] = data["store"]
+
+    if data.get("date"):
+        evidence["date"] = data["date"]
+
+    return evidence
 
 
 def make_answer(intent, data):
-    """
-    Convert verified data into a grounded answer.
-    """
+    """Convert verified data into a grounded answer."""
 
     if data is None:
         return {
             "status": "Safe Failure",
             "answer": "No matching record was found.",
             "evidence": [],
+            "grounded_values": [],
         }
 
     if intent == "lookup":
@@ -35,6 +64,8 @@ def make_answer(intent, data):
 
         if metric in ("revenue_inr", "daily_target_inr"):
             display_value = format_inr(value)
+        elif metric in ("discount_pct", "achievement_pct"):
+            display_value = f"{format_number(value)}%"
         elif metric == "performance_band":
             display_value = str(value)
         else:
@@ -49,7 +80,8 @@ def make_answer(intent, data):
         return {
             "status": "Answered",
             "answer": answer,
-            "evidence": [data],
+            "evidence": [make_evidence(data, [metric])],
+            "grounded_values": [display_value],
         }
 
     if intent == "target_vs_actual":
@@ -64,7 +96,7 @@ def make_answer(intent, data):
             f"{data['store']} on {data['date']}: "
             f"revenue {format_inr(revenue)}, "
             f"target {format_inr(target)}, "
-            f"achievement {achievement:.2f}%, "
+            f"achievement {format_number(achievement)}%, "
             f"performance band {band}. "
             f"Target {'achieved' if met_target else 'not achieved'}. "
             f"Source: {data['source']}."
@@ -73,7 +105,22 @@ def make_answer(intent, data):
         return {
             "status": "Answered",
             "answer": answer,
-            "evidence": [data],
+            "evidence": [
+                make_evidence(
+                    data,
+                    [
+                        "revenue_inr",
+                        "daily_target_inr",
+                        "achievement_pct",
+                        "performance_band",
+                    ],
+                )
+            ],
+            "grounded_values": [
+                format_inr(revenue),
+                format_inr(target),
+                f"{format_number(achievement)}%",
+            ],
         }
 
     if intent == "comparison":
@@ -82,6 +129,7 @@ def make_answer(intent, data):
                 "status": "Safe Failure",
                 "answer": "No comparison data available.",
                 "evidence": [],
+                "grounded_values": [],
             }
 
         lines = [
@@ -97,7 +145,17 @@ def make_answer(intent, data):
                 + "\n".join(lines)
                 + "\nSource: data/store_daily_clean.csv."
             ),
-            "evidence": data,
+            "evidence": [
+                {
+                    "source": "data/store_daily_clean.csv",
+                    "fields": ["revenue_inr"],
+                    "aggregation": "average_by_store",
+                }
+            ],
+            "grounded_values": [
+                format_inr(row["avg_revenue"])
+                for row in data
+            ],
         }
 
     if intent == "inventory":
@@ -106,15 +164,19 @@ def make_answer(intent, data):
                 "status": "Safe Failure",
                 "answer": "No matching inventory records.",
                 "evidence": [],
+                "grounded_values": [],
             }
 
         lines = []
+        grounded = []
+
         for row in data:
             condition = (
                 "below reorder threshold"
                 if row["below_threshold"]
                 else "at or above reorder threshold"
             )
+
             lines.append(
                 f"{row['store']} - {row['product']}: "
                 f"{row['stock_units']} units, "
@@ -122,39 +184,74 @@ def make_answer(intent, data):
                 f"({condition})."
             )
 
+            grounded.extend([
+                str(row["stock_units"]),
+                str(row["reorder_threshold"]),
+            ])
+
         return {
             "status": "Answered",
             "answer": (
                 "\n".join(lines)
                 + "\nSource: data/inventory.csv."
             ),
-            "evidence": data,
+            "evidence": [
+                {
+                    "source": "data/inventory.csv",
+                    "fields": [
+                        "stock_units",
+                        "reorder_threshold",
+                    ],
+                }
+            ],
+            "grounded_values": grounded,
         }
 
     if intent == "feedback":
         themes = data.get("themes", [])
-
         top_theme = (
             themes[0]["theme"] if themes else "Unavailable"
         )
 
+        avg_rating = data.get("average_rating")
+        rating_text = (
+            format_number(avg_rating)
+            if avg_rating is not None
+            else "Unavailable"
+        )
+
         answer = (
             f"{data['store']} feedback: "
-            f"average rating {data['average_rating']}, "
+            f"average rating {rating_text}, "
             f"rated records {data['rated_count']}, "
             f"total feedback {data['total_feedback']}, "
             f"most frequent theme {top_theme}. "
             f"Source: {data['source']}."
         )
 
+        grounded = [
+            str(data["rated_count"]),
+            str(data["total_feedback"]),
+        ]
+
+        if avg_rating is not None:
+            grounded.insert(0, rating_text)
+
         return {
             "status": "Answered",
             "answer": answer,
-            "evidence": [data],
+            "evidence": [
+                make_evidence(
+                    data,
+                    ["rating", "theme"]
+                )
+            ],
+            "grounded_values": grounded,
         }
 
     return {
         "status": "Safe Failure",
         "answer": "This request is not supported.",
         "evidence": [],
+        "grounded_values": [],
     }

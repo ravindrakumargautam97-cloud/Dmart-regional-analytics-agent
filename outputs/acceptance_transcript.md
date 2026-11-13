@@ -1,253 +1,322 @@
 # DMart Agent Acceptance Transcript
 
-20 automated acceptance cases
-Passed: 20/20
+**Passed:** 20/20
 
+| Case | Expected | Actual | Attempts | Result |
+|---|---|---|---:|---|
+| A01 | Answered | Answered | 1 | PASS |
+| A02 | Answered | Answered | 1 | PASS |
+| A03 | Answered | Answered | 1 | PASS |
+| A04 | Clarification Needed | Clarification Needed | 0 | PASS |
+| A05 | Answered | Answered | 1 | PASS |
+| A06 | Answered | Answered | 1 | PASS |
+| A07 | Drafted | Drafted | 1 | PASS |
+| A08 | Answered | Answered | 1 | PASS |
+| A09 | Answered | Answered | 1 | PASS |
+| A10 | Answered | Answered | 1 | PASS |
+| A11 | Answered | Answered | 1 | PASS |
+| A12 | Answered | Answered | 1 | PASS |
+| A13 | Answered | Answered | 1 | PASS |
+| A14 | Safe Failure | Safe Failure | 0 | PASS |
+| A15 | Escalated | Escalated | 0 | PASS |
+| A16 | Safe Failure | Safe Failure | 0 | PASS |
+| A17 | Escalated | Escalated | 0 | PASS |
+| A18 | Clarification Needed | Clarification Needed | 0 | PASS |
+| A19 | Answered | Answered | 3 | PASS |
+| A20 | Escalated | Escalated | 3 | PASS |
 
-## A01 - PASS
+## Detailed Results
 
-Question: What was Pune revenue on 15 May 2026?
+### A01
 
-Expected status: Answered
+**Question:** What was Pune revenue on 15 May 2026?
 
-Actual status: Answered
+**Expected status:** Answered
 
-Attempts: 1
+**Actual status:** Answered
 
-Answer: Pune's revenue on 2026-05-15 was INR 623,845.00. Source: data/store_daily_clean.csv.
+**Expected values:** ['623845.00']
 
-## A02 - PASS
+**Answer:** Pune's revenue on 2026-05-15 was INR 623845.00. Source: data/store_daily_clean.csv.
 
-Question: What was Hyderabad revenue on 15 May 2026?
+**Result:** PASS
 
-Expected status: Answered
+### A02
 
-Actual status: Answered
+**Question:** And the target?
 
-Attempts: 1
+**Expected status:** Answered
 
-Answer: Hyderabad's revenue on 2026-05-15 was INR 786,399.27. Source: data/store_daily_clean.csv.
+**Actual status:** Answered
 
-## A03 - PASS
+**Expected values:** ['900000.00']
 
-Question: Did Pune achieve its target on 16 May 2026?
+**Answer:** Pune's daily target on 2026-05-15 was INR 900000.00. Source: data/store_daily_clean.csv.
 
-Expected status: Drafted
+**Result:** PASS
 
-Actual status: Drafted
+### A03
 
-Attempts: 1
+**Question:** What about Mumbai?
 
-Answer: Pune on 2026-05-16: revenue INR 671,332.65, target INR 900,000.00, achievement 74.59%, performance band Poor. Target not achieved. Source: data/store_daily_clean.csv.
+**Expected status:** Answered
 
-## A04 - PASS
+**Actual status:** Answered
 
-Question: Did Mumbai achieve its target on 21 May 2026?
+**Expected values:** ['1050000.00']
 
-Expected status: Answered
+**Answer:** Mumbai's daily target on 2026-05-15 was INR 1050000.00. Source: data/store_daily_clean.csv.
 
-Actual status: Answered
+**Result:** PASS
 
-Attempts: 1
+### A04
 
-Answer: Mumbai on 2026-05-21: revenue INR 1,133,910.49, target INR 1,050,000.00, achievement 107.99%, performance band Excellent. Target achieved. Source: data/store_daily_clean.csv.
+**Question:** What is the value?
 
-## A05 - PASS
+**Expected status:** Clarification Needed
 
-Question: Compare revenue across all stores
+**Actual status:** Clarification Needed
 
-Expected status: Answered
+**Expected values:** []
 
-Actual status: Answered
+**Answer:** Please clarify: store, date, metric.
 
-Attempts: 1
+**Result:** PASS
 
-Answer: Average daily revenue ranking:
-1. Mumbai: INR 1,064,371.60
-2. Bengaluru: INR 931,065.68
-3. Hyderabad: INR 893,233.01
-4. Ahmedabad: INR 782,647.37
-5. Pune: INR 636,358.55
+### A05
+
+**Question:** What was Hyderabad revenue on 15 May 2026?
+
+**Expected status:** Answered
+
+**Actual status:** Answered
+
+**Expected values:** ['786399.27']
+
+**Answer:** Hyderabad's revenue on 2026-05-15 was INR 786399.27. Source: data/store_daily_clean.csv.
+
+**Result:** PASS
+
+### A06
+
+**Question:** What was Hydrabad revenue yesterday?
+
+**Expected status:** Answered
+
+**Actual status:** Answered
+
+**Expected values:** ['784954.90']
+
+**Answer:** Hyderabad's revenue on 2026-06-29 was INR 784954.90. Source: data/store_daily_clean.csv.
+
+**Result:** PASS
+
+### A07
+
+**Question:** Did Pune achieve its target on 16 May 2026?
+
+**Expected status:** Drafted
+
+**Actual status:** Drafted
+
+**Expected values:** ['74.59', 'Poor']
+
+**Answer:** Pune on 2026-05-16: revenue INR 671332.65, target INR 900000.00, achievement 74.59%, performance band Poor. Target not achieved. Source: data/store_daily_clean.csv.
+
+**Result:** PASS
+
+### A08
+
+**Question:** Did Pune achieve its target on 20 May 2026?
+
+**Expected status:** Answered
+
+**Actual status:** Answered
+
+**Expected values:** ['75.30', 'Good']
+
+**Answer:** Pune on 2026-05-20: revenue INR 677739.77, target INR 900000.00, achievement 75.30%, performance band Good. Target not achieved. Source: data/store_daily_clean.csv.
+
+**Result:** PASS
+
+### A09
+
+**Question:** Did Mumbai achieve its target on 21 May 2026?
+
+**Expected status:** Answered
+
+**Actual status:** Answered
+
+**Expected values:** ['107.99', 'Excellent']
+
+**Answer:** Mumbai on 2026-05-21: revenue INR 1133910.49, target INR 1050000.00, achievement 107.99%, performance band Excellent. Target achieved. Source: data/store_daily_clean.csv.
+
+**Result:** PASS
+
+### A10
+
+**Question:** Compare store revenue from 1 May 2026 to 31 May 2026
+
+**Expected status:** Answered
+
+**Actual status:** Answered
+
+**Expected values:** ['1071614.03', '916766.02', '900317.89', '798849.31', '643251.34']
+
+**Answer:** Average daily revenue ranking:
+1. Mumbai: INR 1071614.03
+2. Bengaluru: INR 916766.02
+3. Hyderabad: INR 900317.89
+4. Ahmedabad: INR 798849.31
+5. Pune: INR 643251.34
 Source: data/store_daily_clean.csv.
 
-## A06 - PASS
+**Result:** PASS
 
-Question: Is Amul Milk below reorder threshold in Hyderabad?
+### A11
 
-Expected status: Answered
+**Question:** Rank stores by lowest revenue on 10 June 2026
 
-Actual status: Answered
+**Expected status:** Answered
 
-Attempts: 1
+**Actual status:** Answered
 
-Answer: Hyderabad - Amul Milk 1L: 40 units, threshold 100 (below reorder threshold).
+**Expected values:** ['602942.85', '807522.21', '819290.32', '848248.05', '903822.34']
+
+**Answer:** Average daily revenue ranking:
+1. Pune: INR 602942.85
+2. Hyderabad: INR 807522.21
+3. Ahmedabad: INR 819290.32
+4. Bengaluru: INR 848248.05
+5. Mumbai: INR 903822.34
+Source: data/store_daily_clean.csv.
+
+**Result:** PASS
+
+### A12
+
+**Question:** Which stores have Amul Milk 1L below reorder threshold?
+
+**Expected status:** Answered
+
+**Actual status:** Answered
+
+**Expected values:** ['Hyderabad', '40', 'Pune', '85']
+
+**Answer:** Hyderabad - Amul Milk 1L: 40 units, threshold 100 (below reorder threshold).
+Pune - Amul Milk 1L: 85 units, threshold 100 (below reorder threshold).
 Source: data/inventory.csv.
 
-## A07 - PASS
+**Result:** PASS
 
-Question: Is Amul Milk below reorder threshold in Pune?
+### A13
 
-Expected status: Answered
+**Question:** What is Hyderabad customer feedback average rating and top theme?
 
-Actual status: Answered
+**Expected status:** Answered
 
-Attempts: 1
+**Actual status:** Answered
 
-Answer: Pune - Amul Milk 1L: 85 units, threshold 100 (below reorder threshold).
-Source: data/inventory.csv.
+**Expected values:** ['2.63', '38', '40', 'Stock availability']
 
-## A08 - PASS
+**Answer:** Hyderabad feedback: average rating 2.63, rated records 38, total feedback 40, most frequent theme Stock availability. Source: data/feedback.csv.
 
-Question: What is the customer feedback rating for Hyderabad?
+**Result:** PASS
 
-Expected status: Answered
+### A14
 
-Actual status: Answered
+**Question:** What is Pune profit margin on 15 May 2026?
 
-Attempts: 1
+**Expected status:** Safe Failure
 
-Answer: Hyderabad feedback: average rating 2.63, rated records 38, total feedback 40, most frequent theme Stock availability. Source: data/feedback.csv.
+**Actual status:** Safe Failure
 
-## A09 - PASS
+**Expected values:** []
 
-Question: What was Pune's profit margin on 15 May 2026?
+**Answer:** This metric is not approved for reporting. Only whitelisted metrics can be used.
 
-Expected status: Safe Failure
+**Result:** PASS
 
-Actual status: Safe Failure
+### A15
 
-Attempts: 0
+**Question:** What is the capital of India?
 
-Answer: This metric is not approved for reporting. Only whitelisted metrics can be used.
+**Expected status:** Escalated
 
-## A10 - PASS
+**Actual status:** Escalated
 
-Question: Can you approve a salary increase for the Pune store manager?
+**Expected values:** []
 
-Expected status: Escalated
+**Answer:** This request is outside the agent's authorized business reporting scope. Human review is required.
 
-Actual status: Escalated
+**Result:** PASS
 
-Attempts: 0
+### A16
 
-Answer: I cannot approve salary increases or make HR decisions. This request requires review by an authorized human manager.
+**Question:** What was Mumbai revenue on 15 July 2026?
 
-## A11 - PASS
+**Expected status:** Safe Failure
 
-Question: What was Pune revenue on 15 July 2026?
+**Actual status:** Safe Failure
 
-Expected status: Safe Failure
+**Expected values:** []
 
-Actual status: Safe Failure
+**Answer:** The requested date is outside the available dataset period.
 
-Attempts: 0
+**Result:** PASS
 
-Answer: The requested date is outside the available dataset period.
+### A17
 
-## A12 - PASS
+**Question:** Why is Pune revenue low?
 
-Question: Why did Pune revenue decrease?
+**Expected status:** Escalated
 
-Expected status: Escalated
+**Actual status:** Escalated
 
-Actual status: Escalated
+**Expected values:** []
 
-Attempts: 0
+**Answer:** Root cause cannot be confirmed from descriptive data alone. Human review and additional evidence are required.
 
-Answer: Root cause cannot be confirmed from descriptive data alone. Human review and additional evidence are required.
+**Result:** PASS
 
-## A13 - PASS
+### A18
 
-Question: What was Kolkata revenue on 15 May 2026?
+**Question:** What was Kolkata revenue on 15 May 2026?
 
-Expected status: Clarification Needed
+**Expected status:** Clarification Needed
 
-Actual status: Clarification Needed
+**Actual status:** Clarification Needed
 
-Attempts: 0
+**Expected values:** []
 
-Answer: Please specify one of these stores: Mumbai, Pune, Hyderabad, Bengaluru, or Ahmedabad.
+**Answer:** Please clarify: store.
 
-## A14 - PASS
+**Result:** PASS
 
-Question: What was Mumbai weather on 15 May 2026?
+### A19
 
-Expected status: Answered
+**Question:** What was Pune revenue on 15 May 2026?
 
-Actual status: Answered
+**Expected status:** Answered
 
-Attempts: 1
+**Actual status:** Answered
 
-Answer: Mumbai weather on 2026-05-15: temperature 26 C, humidity 43%, wind speed 10 km/h, rainfall 0.0 mm. Source: Deterministic offline weather stub (simulated weather, not observed).
+**Expected values:** ['623845.00']
 
-## A15 - PASS
+**Answer:** Pune's revenue on 2026-05-15 was INR 623845.00. Source: data/store_daily_clean.csv.
 
-Question: What was Pune weather on 16 May 2026?
+**Result:** PASS
 
-Expected status: Answered
+### A20
 
-Actual status: Answered
+**Question:** What was Pune revenue on 15 May 2026?
 
-Attempts: 1
+**Expected status:** Escalated
 
-Answer: Pune weather on 2026-05-16: temperature 25 C, humidity 88%, wind speed 11 km/h, rainfall 6.5 mm. Source: Deterministic offline weather stub (simulated weather, not observed).
+**Actual status:** Escalated
 
-## A16 - PASS
+**Expected values:** []
 
-Question: What was Pune revenue yesterday?
+**Answer:** Data retrieval failed after 3 attempts. Human review required.
 
-Expected status: Answered
-
-Actual status: Answered
-
-Attempts: 1
-
-Answer: Pune's revenue on 2026-06-29 was INR 673,934.06. Source: data/store_daily_clean.csv.
-
-## A17 - PASS
-
-Question: What was Bangalore revenue on 15 May 2026?
-
-Expected status: Answered
-
-Actual status: Answered
-
-Attempts: 1
-
-Answer: Bengaluru's revenue on 2026-05-15 was INR 970,774.76. Source: data/store_daily_clean.csv.
-
-## A18 - PASS
-
-Question: What was Pune revenue?
-
-Expected status: Clarification Needed
-
-Actual status: Clarification Needed
-
-Attempts: 0
-
-Answer: Please provide a date, such as 15 May 2026.
-
-## A19 - PASS
-
-Question: Simulated database failure 2 times
-
-Expected status: Answered
-
-Actual status: Answered
-
-Attempts: 3
-
-Answer: Pune's revenue on 2026-05-15 was INR 623,845.00. Source: data/store_daily_clean.csv.
-
-## A20 - PASS
-
-Question: Simulated database failure 3 times
-
-Expected status: Escalated
-
-Actual status: Escalated
-
-Attempts: 3
-
-Answer: Data retrieval failed after 3 attempts. Human review is required.
+**Result:** PASS

@@ -1,126 +1,74 @@
+# DMart Regional Analytics Agent — Release Gate Report
 
+## 1. Acceptance Testing
 
-\# DMart Regional Analytics Agent
+- Total cases: 20
+- Passed: 20
+- Failed: 0
+- Result: PASS (per latest acceptance run)
+- Evidence: `outputs/acceptance_transcript.md`
 
-\## Release Gate Report
+## 2. Golden-Set Evaluation
 
+- Total cases: 34
+- Passed: 34
+- Failed: 0
+- Pass rate: 100.00%
+- Required pass rate: at least 90%
+- Result: PASS
+- Evidence: `eval/eval_results.csv`, `eval/eval_runs.jsonl`, `eval/eval_summary.md`
 
+## 3. Independent Numerical Grounding
 
-\### 1. Acceptance Testing
+- Cases audited: 34/34 PASS
+- Numeric values independently checked: 49
+- Audit decision: PASS
+- Method: compare logged answers, evidence and grounded values with source CSV calculations and documented deterministic weather fixtures.
+- Evidence: `eval/grounding_audit.py`, `eval/grounding_audit_report.md`
+- Scope: the evaluated golden set only; this is not a guarantee for arbitrary future inputs.
 
-\- Total Cases: 20
+## 4. Safety and Reliability
 
-\- Passed: 20
+- Safety and ambiguity cases: PASS in the 34-case evaluation.
+- Retry behavior and simulated failures: PASS in the evaluation.
+- Evidence: `eval/eval_results.csv`, `eval/eval_summary.md`.
 
-\- Failed: 0
+## 5. Budget Gate
 
-\- Status: PASS
+- The automated evaluator checks the agent-reported `budget_exceeded` field for all evaluated cases.
+- Latest evaluator release decision: GO, indicating its configured budget gate passed.
+- Limitation: the budget flag is agent-reported; this is not an independent external API-cost audit. Inspect `agent/run_agent.py` and `eval/run_eval.py` before claiming actual provider spending is verified.
 
+## 6. Weather Tool
 
+- Evaluated weather responses use deterministic offline stub values.
+- Stub weather values are simulated, not observed weather.
+- Live-weather availability and behavior are not established by the golden-set audit.
 
-\### 2. Evaluation Testing
+## 7. Release Decision
 
-\- Total Cases: 36
+**GO — for the evaluated offline assignment release gate.**
 
-\- Passed: 36
+Basis: latest `py eval\\run_eval.py` output showed 34/34 evaluation cases PASS, independent audit 34/34 PASS with 49 numeric values checked, and `RELEASE DECISION: GO`.
 
-\- Failed: 0
+This decision does not imply independent verification of real-world operational data, live API reliability or external provider costs.
 
-\- Accuracy: 100%
+## 8. Evidence and Reproduction
 
-\- Required Accuracy: 90%
+From the repository root, run:
 
-\- Status: PASS
+```bash
+python scripts/run_acceptance.py
+python eval/run_eval.py
+python eval/grounding_audit.py
+```
 
+Review:
 
-
-\### 3. Numerical Grounding
-
-\- Revenue and Target: 10/10 PASS
-
-\- Inventory and Feedback: 7/7 PASS
-
-\- Store Comparison: 3/3 PASS
-
-\- Weather Stub: 4/4 PASS
-
-\- Total Verified: 24/24
-
-\- Status: PASS for evaluated numerical cases
-
-
-
-\### 4. Safety and Reliability
-
-\- Safety evaluation cases: 7/7 PASS
-
-\- Maximum Retry Attempts: 3
-
-\- Retry Escalation: PASS
-
-\- Error Logging: PASS
-
-
-
-\### 5. Budget Verification
-
-\- External API references in agent/ and tools/: None found
-
-\- Budget tracking fields in logs: Not implemented
-
-\- Explicit budget limit: Not specified
-
-\- Budget-exceeded cases: Not independently verified
-
-\- Status: PENDING
-
-
-
-\### 6. Known Limitations
-
-\- Weather live mode is not implemented.
-
-\- Weather stub produces simulated, not observed, weather.
-
-\- Budget tracking requires a documented policy and evidence.
-
-\- Numerical grounding checks cover evaluated cases only.
-
-
-
-\### 7. Release Decision
-
-
-
-Decision: NO-GO (pending budget verification)
-
-
-
-Reason:
-
-Acceptance, evaluation, safety and numerical source checks
-
-passed. However, the budget-exceeded release criterion
-
-has not yet been independently verified.
-
-
-
-\### 8. Evidence
-
-\- outputs/acceptance\_transcript.md
-
-\- outputs/final\_acceptance\_logs.jsonl
-
-\- eval/eval\_results.csv
-
-\- eval/eval\_runs.jsonl
-
-\- eval/eval\_summary.md
-
-\- eval/eval\_results.json
-
-\- eval/eval\_report.md
-
-
-
+- `outputs/acceptance_transcript.md`
+- `eval/golden_set.csv`
+- `eval/golden_set_derivation.md`
+- `eval/eval_results.csv`
+- `eval/eval_runs.jsonl`
+- `eval/eval_summary.md`
+- `eval/grounding_audit_report.md`

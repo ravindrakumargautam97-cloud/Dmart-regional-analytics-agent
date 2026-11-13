@@ -1,8 +1,10 @@
 
 import json
+import os
 import sys
 import time
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -19,14 +21,12 @@ from agent.fetch import (
     get_feedback,
 )
 from agent.answer import make_answer
-from tools.weather import get_weather
 from agent.retry import run_with_retry
+from tools.weather import get_weather
 
-
-LOG_DIR = ROOT / "logs"
-LOG_DIR.mkdir(exist_ok=True)
 
 SESSIONS = {}
+MAX_TOKENS = 150
 
 
 def handle(question, session_id, user_id="u1"):
@@ -36,30 +36,52 @@ def handle(question, session_id, user_id="u1"):
     parsed = understand(question, context)
 
     intent = parsed["intent"]
-    store = parsed["store"]
-    date = parsed["date"]
+    store = parsed.get("store")
+    date = parsed.get("date")
+    metric = parsed.get("metric")
+    start_date = parsed.get("start_date")
+    end_date = parsed.get("end_date")
+    missing = parsed.get("missing", [])
+    confidence = parsed.get("confidence", 0.0)
+
+    tools_called = []
+    route = "none"
+    executed = False
+    attempts = 0
 
     result = {
+        "run_id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "session_id": session_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "question": question,
         "intent": intent,
+        "confidence": confidence,
+        "route": route,
+        "executed": executed,
+        "attempts": attempts,
+        "tools_called": tools_called,
         "status": "Safe Failure",
         "answer": "",
+        "answer_text": "",
         "evidence": [],
-        "confidence": parsed["confidence"],
-        "attempts": 0,
+        "grounded_values": [],
+        "latency_ms": 0,
+        "tokens_est": 0,
+        "tool_calls": 0,
+        "ungrounded_numbers": 0,
+        "budget_exceeded": False,
     }
 
     try:
-        # 1. Out-of-scope safety
         if intent == "out_of_scope":
             result["status"] = "Escalated"
             result["answer"] = (
-                "I cannot approve salary increases or "
-                "make HR decisions. This request requires "
-                "review by an authorized human manager."
+                "This request is outside the agent's "
+                "authorized business reporting scope. "
+                "Human review is required."
             )
 
-        # 2. Unsupported metrics
         elif intent == "unsupported_metric":
             result["status"] = "Safe Failure"
             result["answer"] = (
@@ -67,7 +89,6 @@ def handle(question, session_id, user_id="u1"):
                 "Only whitelisted metrics can be used."
             )
 
-        # 3. Diagnostic questions
         elif intent == "diagnostic":
             result["status"] = "Escalated"
             result["answer"] = (
@@ -76,11 +97,37 @@ def handle(question, session_id, user_id="u1"):
                 "and additional evidence are required."
             )
 
-        # 4. Date validation
-        elif date and not (
-            MIN_DATE.date().isoformat()
-            <= date
-            <= MAX_DATE.date().isoformat()
+        # All-store inventory questions do not need
+        # a specific store name.
+        elif (
+            (confidence < 0.70 or missing)
+            and not (
+                intent == "inventory"
+                and not store
+                and set(missing).issubset({"store"})
+            )
+        ):
+            result["status"] = "Clarification Needed"
+            result["answer"] = (
+                "Please clarify: "
+                + ", ".join(missing or ["store or metric"])
+                + "."
+            )
+
+        elif (
+            (date and not (
+                str(MIN_DATE)
+                <= date
+                <= str(MAX_DATE)
+            ))
+            or (
+                start_date
+                and start_date < str(MIN_DATE)
+            )
+            or (
+                end_date
+                and end_date > str(MAX_DATE)
+            )
         ):
             result["status"] = "Safe Failure"
             result["answer"] = (
@@ -88,112 +135,291 @@ def handle(question, session_id, user_id="u1"):
                 "available dataset period."
             )
 
-        # 5. Store comparison
         elif intent == "comparison":
-            data = compare_store_revenue()
-            result.update(make_answer(intent, data))
-            result["attempts"] = 1
+            route = "sql"
+            executed = True
+            tools_called.append("compare_store_revenue")
 
-        # 6. Missing store
-        elif not store:
-            result["status"] = "Clarification Needed"
-            result["answer"] = (
-                "Please specify one of these stores: "
-                "Mumbai, Pune, Hyderabad, Bengaluru, "
-                "or Ahmedabad."
+            ascending = any(
+                word in question.lower()
+                for word in ["lowest", "worst"]
             )
 
-        # 7. Inventory lookup
+            if start_date and end_date:
+                first, last = start_date, end_date
+            else:
+                first, last = date, date
+
+            retry = run_with_retry(
+                lambda: compare_store_revenue(
+                    first,
+                    last,
+                    ascending=ascending,
+                ),
+                max_attempts=3,
+            )
+            attempts = retry["attempts"]
+
+            if retry["success"]:
+                result.update(
+                    make_answer("comparison", retry["data"])
+                )
+            else:
+                result["status"] = "Escalated"
+                result["answer"] = (
+                    "Data retrieval failed after "
+                    "3 attempts. Human review required."
+                )
+
         elif intent == "inventory":
+            route = "sql"
+            executed = True
+            tools_called.append("get_inventory")
+
             product = (
                 "Amul Milk 1L"
                 if "amul milk" in question.lower()
                 else None
             )
 
-            data = get_inventory(store, product)
-            result.update(make_answer(intent, data))
-            result["attempts"] = 1
+            retry = run_with_retry(
+                lambda: get_inventory(store, product),
+                max_attempts=3,
+            )
+            attempts = retry["attempts"]
 
-        # 8. Feedback lookup
-        elif intent == "feedback":
-            data = get_feedback(store)
-            result.update(make_answer(intent, data))
-            result["attempts"] = 1
+            if retry["success"]:
+                data = retry["data"]
 
-        # 9. Weather lookup
-        elif intent == "weather":
-            if not date:
-                result["status"] = "Clarification Needed"
-                result["answer"] = (
-                    "Please provide a date for the "
-                    "weather request."
+                if "below" in question.lower():
+                    data = [
+                        row
+                        for row in data
+                        if row["below_threshold"]
+                    ]
+
+                result.update(
+                    make_answer("inventory", data)
                 )
             else:
-                weather = get_weather(
-                    store,
-                    date,
-                    mode="stub"
+                result["status"] = "Escalated"
+                result["answer"] = (
+                    "Inventory retrieval failed "
+                    "after 3 attempts."
                 )
+
+        elif intent == "feedback":
+            route = "sql"
+            executed = True
+            tools_called.append("get_feedback")
+
+            retry = run_with_retry(
+                lambda: get_feedback(store),
+                max_attempts=3,
+            )
+            attempts = retry["attempts"]
+
+            if retry["success"]:
+                result.update(
+                    make_answer("feedback", retry["data"])
+                )
+            else:
+                result["status"] = "Escalated"
+                result["answer"] = (
+                    "Feedback retrieval failed "
+                    "after 3 attempts."
+                )
+
+        elif intent == "weather":
+            route = "weather"
+            executed = True
+            tools_called.append("get_weather")
+
+            retry = run_with_retry(
+                lambda: get_weather(store, date),
+                max_attempts=3,
+            )
+            attempts = retry["attempts"]
+
+            if retry["success"]:
+                weather = retry["data"]
 
                 result["status"] = "Answered"
                 result["answer"] = (
                     f"{store} weather on {date}: "
-                    f"temperature {weather['temperature_c']} C, "
-                    f"humidity {weather['humidity_pct']}%, "
-                    f"wind speed {weather['wind_speed_kmh']} km/h, "
-                    f"rainfall {weather['rainfall_mm']} mm. "
-                    f"Source: {weather['source']} "
-                    f"(simulated weather, not observed)."
+                    f"temperature "
+                    f"{weather['temperature_c']:.1f} C, "
+                    f"humidity "
+                    f"{weather['humidity_pct']:.1f}%, "
+                    f"wind speed "
+                    f"{weather['wind_speed_kmh']:.1f} km/h, "
+                    f"rainfall "
+                    f"{weather['rainfall_mm']:.1f} mm. "
+                    "Simulated offline weather."
                 )
-                result["evidence"] = [weather]
-                result["attempts"] = 1
 
-        # 10. Missing date
-        elif not date:
-            result["status"] = "Clarification Needed"
-            result["answer"] = (
-                "Please provide a date, such as "
-                "15 May 2026."
-            )
-        elif intent == "target_vs_actual":
-            data = get_target_vs_actual(store, date)
-            result.update(make_answer(intent, data))
+                result["evidence"] = [{
+                    "source": weather["source"],
+                    "fields": [
+                        "temperature_c",
+                        "humidity_pct",
+                        "wind_speed_kmh",
+                        "rainfall_mm",
+                    ],
+                    "city": store,
+                    "date": date,
+                }]
 
-            if data and data["performance_band"] == "Poor":
-                result["status"] = "Drafted"
+                result["grounded_values"] = [
+                    f"{weather['temperature_c']:.1f}",
+                    f"{weather['humidity_pct']:.1f}",
+                    f"{weather['wind_speed_kmh']:.1f}",
+                    f"{weather['rainfall_mm']:.1f}",
+                ]
 
-            result["attempts"] = 1
+                # Combined revenue + weather request (W01).
+                if any(word in question.lower() for word in
+                       ("revenue", "sales", "earned", "earn")):
+                    tools_called.append("get_store_day")
+                    revenue_retry = run_with_retry(
+                        lambda: get_store_day(store, date, "revenue_inr"),
+                        max_attempts=3,
+                    )
+                    attempts += revenue_retry["attempts"]
 
-      
-        # 12. Default revenue lookup
-        
-        else:
-            retry_result = run_with_retry(
-                lambda: get_store_day(store, date),
-                max_attempts=3
-            )
+                    if not revenue_retry["success"]:
+                        result["status"] = "Escalated"
+                        result["answer"] = (
+                            "Revenue retrieval failed after 3 attempts. "
+                            "Human review required."
+                        )
+                        result["evidence"] = []
+                        result["grounded_values"] = []
+                    elif revenue_retry["data"] is None:
+                        result["status"] = "Safe Failure"
+                        result["answer"] = (
+                            "Revenue data is unavailable for the "
+                            "requested store and date."
+                        )
+                        result["evidence"] = []
+                        result["grounded_values"] = []
+                    else:
+                        revenue_data = revenue_retry["data"]
+                        amount = revenue_data["value"]
+                        result["answer"] = (
+                            f"{store} revenue on {date}: "
+                            f"INR {amount:.2f}. "
+                            + result["answer"]
+                        )
+                        result["evidence"].append({
+                            "source": revenue_data["source"],
+                            "fields": ["revenue_inr"],
+                            "store": store,
+                            "date": date,
+                        })
+                        result["grounded_values"].append(
+                            f"INR {amount:.2f}"
+                        )
 
-            result["attempts"] = retry_result["attempts"]
-
-            if retry_result["success"]:
-                data = retry_result["data"]
-                result.update(make_answer("lookup", data))
-  
             else:
                 result["status"] = "Escalated"
-                result["error"] = retry_result["error"]
                 result["answer"] = (
-                    "Data retrieval failed after 3 attempts. "
-                    "Human review is required."
+                    "Weather retrieval failed. "
+                    "Human review required."
                 )
 
+        elif intent == "target_vs_actual":
+            route = "python"
+            executed = True
+            tools_called.append("get_target_vs_actual")
 
-        # Save conversation context
-        if store:
+            retry = run_with_retry(
+                lambda: get_target_vs_actual(store, date),
+                max_attempts=3,
+            )
+            attempts = retry["attempts"]
+
+            if retry["success"]:
+                data = retry["data"]
+
+                if data is None:
+                    result.update(
+                        make_answer("target_vs_actual", None)
+                    )
+
+                elif (
+                    metric == "daily_target_inr"
+                    and "achieve" not in question.lower()
+                    and "achievement" not in question.lower()
+                    and "performance" not in question.lower()
+                ):
+                    target_data = {
+                        "store": store,
+                        "date": date,
+                        "metric": "daily_target_inr",
+                        "value": data["daily_target_inr"],
+                        "source": data["source"],
+                    }
+
+                    result.update(
+                        make_answer("lookup", target_data)
+                    )
+
+                else:
+                    result.update(
+                        make_answer("target_vs_actual", data)
+                    )
+
+                    if (
+                        data is not None
+                        and data["performance_band"] == "Poor"
+                    ):
+                        result["status"] = "Drafted"
+
+            else:
+                result["status"] = "Escalated"
+                result["answer"] = (
+                    "Target retrieval failed "
+                    "after 3 attempts."
+                )
+
+        else:
+            route = "python"
+            executed = True
+            tools_called.append("get_store_day")
+
+            selected_metric = metric or "revenue_inr"
+
+            retry = run_with_retry(
+                lambda: get_store_day(
+                    store,
+                    date,
+                    selected_metric,
+                ),
+                max_attempts=3,
+            )
+            attempts = retry["attempts"]
+
+            if retry["success"]:
+                result.update(
+                    make_answer("lookup", retry["data"])
+                )
+            else:
+                result["status"] = "Escalated"
+                result["answer"] = (
+                    "Data retrieval failed after "
+                    "3 attempts. Human review required."
+                )
+
+        # Preserve metric for follow-up questions.
+        if (
+            store
+            and result["status"] in ("Answered", "Drafted")
+        ):
             SESSIONS[session_id] = {
                 "store": store,
                 "date": date,
+                "metric": metric or "revenue_inr",
             }
 
     except Exception as exc:
@@ -203,24 +429,48 @@ def handle(question, session_id, user_id="u1"):
         )
         result["error"] = str(exc)
 
-    # Processing latency
+    result["route"] = route
+    result["executed"] = executed
+    result["attempts"] = attempts
+    result["tools_called"] = tools_called
+    result["tool_calls"] = len(tools_called)
+
+    result["answer_text"] = result["answer"]
+
     result["latency_ms"] = round(
-        (time.perf_counter() - started) * 1000, 2
+        (time.perf_counter() - started) * 1000,
+        2,
     )
 
-    # Audit log
-    log_entry = {
-        "timestamp": datetime.now().isoformat(),
-        "session_id": session_id,
-        "user_id": user_id,
-        **result,
-    }
+    # Offline estimate; not actual LLM token usage.
+    result["tokens_est"] = (
+        len(question.split())
+        + len(result["answer"].split())
+    )
 
-    with (LOG_DIR / "runs.jsonl").open(
-        "a", encoding="utf-8"
+    result["budget_exceeded"] = (
+        result["tokens_est"] > MAX_TOKENS
+    )
+
+    log_path = Path(
+        os.getenv(
+            "AGENT_LOG_PATH",
+            str(ROOT / "logs" / "runs.jsonl"),
+        )
+    )
+
+    log_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    with log_path.open(
+        "a",
+        encoding="utf-8",
     ) as file:
         file.write(
-            json.dumps(log_entry) + "\n"
+            json.dumps(result, ensure_ascii=False)
+            + "\n"
         )
 
     return result
@@ -241,7 +491,7 @@ if __name__ == "__main__":
 
         response = handle(
             question,
-            "demo_session"
+            "demo_session",
         )
 
         print("\nAgent:", response["answer"])
