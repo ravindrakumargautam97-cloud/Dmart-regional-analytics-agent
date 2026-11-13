@@ -14,9 +14,9 @@
 
 ## Latency
 
-- Mean latency_ms: 10.84
-- P90 latency_ms (linear interpolation): 14.07
-- Maximum latency_ms: 135.87
+- Mean latency_ms: 4.80
+- P90 latency_ms (linear interpolation): 10.18
+- Maximum latency_ms: 15.97
 
 ## Quality
 
