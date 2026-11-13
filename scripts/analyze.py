@@ -34,7 +34,7 @@ rows.append({"Store": "All stores", **store_metrics(df)})
 
 summary = pd.DataFrame(rows)
 summary.to_csv(
-    ANALYSIS / "store_summary.csv", index=False
+    ANALYSIS / "store_summary.csv", index=False, float_format="%.2f"
 )
 
 # Correlations after cleaning
@@ -162,7 +162,7 @@ lines += [
 
 print("DMart Part A Analysis Completed!")
 print()
-print(summary.to_string(index=False))
+print(summary.to_string(index=False, float_format=lambda x: f"{x:.2f}"))
 print()
 print("Correlations:")
 print("All revenue-stockout:", round(corr_all_stockout, 3))
